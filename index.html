@@ -186,6 +186,15 @@
         white-space: pre-wrap;
         font-family: monospace;
     }
+    .debug-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+        font-size: 0.9em;
+        color: #6c757d;
+    }
 </style>
 </head>
 <body>
@@ -233,6 +242,7 @@
     <p>Unggah gambar kode QR 2FA untuk mengekstrak akun dan secret-nya. Atau Anda bisa langsung menggunakan Generator Bookmarklet diatas jika sudah punya kode secret.</p>
     
     <input type="file" id="fileInput" accept="image/*">
+    <div id="debugInfo" class="debug-info" style="display: none;"></div>
     <pre id="output">Silakan Upload QR Google Authenticator</pre>
     
     <div class="footer">
@@ -247,36 +257,123 @@ function handleFile(evt) {
     const file = evt.target.files[0];
     if (!file) return;
 
+    const debugInfo = document.getElementById('debugInfo');
+    const output = document.getElementById('output');
+    
+    debugInfo.style.display = 'block';
+    debugInfo.textContent = '🔄 Memproses gambar...';
+    output.textContent = '🔄 Sedang membaca QR code...';
+
     const reader = new FileReader();
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            debugInfo.textContent = `📐 Ukuran gambar: ${img.width}x${img.height}px`;
             
-            // Use jsQR if available
-            if (typeof jsQR !== 'undefined') {
-                const code = jsQR(imageData.data, imageData.width, imageData.height);
-                if (code) {
-                    processQR(code.data);
-                } else {
-                    document.getElementById('output').textContent = "❌ QR code tidak terbaca.";
-                }
-            } else {
-                document.getElementById('output').textContent = "❌ Library jsQR tidak dimuat. Muat ulang halaman.";
-            }
+            // Try multiple canvas sizes and processing methods
+            tryDecodeQR(img, debugInfo, output);
+        };
+        img.onerror = function() {
+            debugInfo.textContent = '❌ Gagal memuat gambar';
+            output.textContent = '❌ Error: Gagal memuat gambar. Pastikan file adalah gambar yang valid.';
         };
         img.src = e.target.result;
+    };
+    reader.onerror = function() {
+        debugInfo.textContent = '❌ Gagal membaca file';
+        output.textContent = '❌ Error: Gagal membaca file.';
     };
     reader.readAsDataURL(file);
 }
 
-function processQR(qrText) {
+function tryDecodeQR(img, debugInfo, output) {
+    // Check if jsQR is available
+    if (typeof jsQR === 'undefined') {
+        debugInfo.textContent = '❌ Library jsQR tidak dimuat';
+        output.textContent = "❌ Library jsQR tidak dimuat. Muat ulang halaman.";
+        return;
+    }
+
+    const attempts = [
+        { scale: 1, description: 'ukuran asli' },
+        { scale: 2, description: 'diperbesar 2x' },
+        { scale: 0.5, description: 'diperkecil 0.5x' },
+        { scale: 1.5, description: 'diperbesar 1.5x' }
+    ];
+
+    let attemptIndex = 0;
+
+    function tryNextAttempt() {
+        if (attemptIndex >= attempts.length) {
+            debugInfo.textContent = '❌ Semua percobaan gagal';
+            output.textContent = `❌ QR code tidak dapat dibaca setelah ${attempts.length} percobaan.\n\nTips:\n- Pastikan QR code jelas dan tidak buram\n- Coba crop gambar agar hanya QR code yang terlihat\n- Pastikan QR code dari Google Authenticator\n- Coba ambil screenshot ulang dengan resolusi lebih tinggi`;
+            return;
+        }
+
+        const attempt = attempts[attemptIndex];
+        debugInfo.textContent = `🔍 Percobaan ${attemptIndex + 1}/${attempts.length}: ${attempt.description}`;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = img.width * attempt.scale;
+        canvas.height = img.height * attempt.scale;
+        
+        // Use different image smoothing settings
+        ctx.imageSmoothingEnabled = attemptIndex % 2 === 0;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        try {
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+            
+            if (code && code.data) {
+                debugInfo.textContent = `✅ Berhasil pada percobaan ${attemptIndex + 1}`;
+                processQR(code.data, output);
+                return;
+            }
+            
+            // Try with inversion
+            const codeInverted = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "onlyInvert",
+            });
+            
+            if (codeInverted && codeInverted.data) {
+                debugInfo.textContent = `✅ Berhasil pada percobaan ${attemptIndex + 1} (inverted)`;
+                processQR(codeInverted.data, output);
+                return;
+            }
+            
+            // Try with both
+            const codeBoth = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "attemptBoth",
+            });
+            
+            if (codeBoth && codeBoth.data) {
+                debugInfo.textContent = `✅ Berhasil pada percobaan ${attemptIndex + 1} (both)`;
+                processQR(codeBoth.data, output);
+                return;
+            }
+            
+        } catch (error) {
+            console.error('Error during QR decode attempt:', error);
+        }
+        
+        attemptIndex++;
+        setTimeout(tryNextAttempt, 100);
+    }
+
+    tryNextAttempt();
+}
+
+function processQR(qrText, output) {
     try {
+        // Debug: show raw QR content
+        console.log('Raw QR content:', qrText);
+        
         if (qrText.startsWith("otpauth://")) {
             const url = new URL(qrText);
             const secret = url.searchParams.get("secret");
@@ -284,23 +381,44 @@ function processQR(qrText) {
             const account = decodeURIComponent(url.pathname.split('/').pop() || "");
             
             if (secret) {
-                document.getElementById('output').textContent =
-                    `📌 OTP Auth\n` +
+                output.textContent =
+                    `📌 OTP Auth berhasil dibaca!\n` +
                     `Nama   : ${account}\n` +
                     `Issuer : ${issuer}\n` +
-                    `Secret : ${secret}`;
+                    `Secret : ${secret}\n\n` +
+                    `✅ Secret sudah otomatis diisi ke field di atas`;
                     
                 // Auto-fill the secret field
                 document.getElementById('bookmarkletCode').value = secret;
             } else {
-                document.getElementById('output').textContent = "⚠️ Secret tidak ditemukan di QR.";
+                output.textContent = "⚠️ Secret tidak ditemukan di QR code.";
             }
             return;
         }
         
-        document.getElementById('output').textContent = "⚠️ Format QR tidak dikenali. Pastikan QR dari Google Authenticator.";
+        // Try to parse other formats
+        if (qrText.includes("secret=")) {
+            const secretMatch = qrText.match(/secret=([A-Z2-7]+)/i);
+            if (secretMatch) {
+                output.textContent = 
+                    `📌 Secret ditemukan!\n` +
+                    `Secret : ${secretMatch[1]}\n\n` +
+                    `✅ Secret sudah otomatis diisi ke field di atas`;
+                document.getElementById('bookmarkletCode').value = secretMatch[1];
+                return;
+            }
+        }
+        
+        // Show raw content for debugging
+        output.textContent = 
+            `⚠️ Format QR tidak dikenali sebagai OTP.\n\n` +
+            `Raw content:\n${qrText}\n\n` +
+            `Pastikan QR code dari Google Authenticator atau aplikasi 2FA lainnya.`;
+            
     } catch (err) {
-        document.getElementById('output').textContent = "❌ Error: " + err.message;
+        output.textContent = 
+            `❌ Error parsing QR: ${err.message}\n\n` +
+            `Raw content:\n${qrText}`;
     }
 }
 
