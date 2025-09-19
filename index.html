@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<title>Bookmarklet Kode OTP (dengan Info GTK)</title>
+<title>Bookmarklet Kode OTP (Info GTK - Auto detect)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
     body {font-family: monospace, sans-serif;background: #f4f6f8;color: #333;padding: 20px;}
@@ -21,20 +21,21 @@
     .footer a:hover {text-decoration: underline;}
     .warn {color:#b91c1c;font-weight:600;margin-top:8px;}
     label.small {font-size:0.9rem;color:#374151;}
+    code {background:#eef2ff;padding:2px 6px;border-radius:4px;}
 </style>
 </head>
 <body>
 <div class="container">
-	<h1>⭐ Bookmarklet Kode OTP (Info GTK)</h1>
+	<h1>⭐ Bookmarklet Kode OTP (Info GTK - Auto detect)</h1>
 	<div style="display:flex; justify-content:space-between; align-items:center;">
 	  <p style="margin:0;">Tutorial: <a style="text-decoration:none" href="https://youtu.be/29o-ych59Os" target="_blank">▶️ Youtube - @danie_lung</a></p>
 	  <p style="margin:0;">Ajak Ngopi: <a style="text-decoration:none" href="https://s.id/danielung" target="_blank">☕️ Tubruk</a></p>
 	</div>
     <hr>
     <h3 style="margin-bottom: 5px">👉 Generator Bookmarklet</h3>
-	<p style="margin-top:0">Bookmarklet ini menghasilkan kode OTP sesuai secret yang Anda masukkan, lalu mengisi elemen target di halaman tujuan (menggunakan querySelector). Untuk Info GTK gunakan <a href="https://info.gtk.dikdasmen.go.id/info" target="_blank">https://info.gtk.dikdasmen.go.id/info</a> — salin selector dari DevTools dan masukkan di "Selector custom" jika perlu.</p>
+	<p style="margin-top:0">Masukkan secret (Base32) lalu pilih target. Untuk Info GTK bookmarklet akan mencoba beberapa selector umum; jika tidak cocok, masukkan selector manual (salin dari DevTools).</p>
 
-    <label class="small">Masukkan Kode Secret</label>
+    <label class="small">Masukkan Kode Secret (Base32)</label>
     <input type="text" id="bookmarkletCode" placeholder="Masukkan Kode Secret (base32)">
 
     <label class="small">Nama Bookmarklet</label>
@@ -49,14 +50,14 @@
 	</div>
 
     <label class="small">Selector custom (opsional) — contoh: <code>#otp</code> atau <code>input[name="code"]</code></label>
-    <input type="text" id="customSelector" placeholder="Jika kosong, mapping default akan dipakai">
+    <input type="text" id="customSelector" placeholder="Jika kosong, auto-detect akan dicoba untuk Info GTK">
 
     <button onclick="generateBookmarklet()">Generate Bookmarklet</button>
     <p style="margin: 16px 0;font-family: monospace, sans-serif">Bookmarklet: <a id="bookmarkletLink" href="#" target="_blank" rel="noreferrer noopener"></a></p>
 
 	<hr>
     <h3 style="margin-bottom: 5px">👉 Google Authenticator QR Decoder</h3>
-    <p style="margin-top:0">Unggah gambar kode QR 2FA untuk mengekstrak akun dan secret-nya. Atau langsung gunakan Generator Bookmarklet jika sudah punya secret.</p>
+    <p style="margin-top:0">Unggah gambar QR 2FA untuk mengekstrak akun & secret. Atau pakai generator jika sudah punya secret.</p>
     <p class="warn">⚠️ Perhatian: QR 2FA berisi secret (rahasia). Jangan unggah gambar yang bukan milik Anda.</p>
     <input type="file" id="fileInput" accept="image/*">
     <pre id="output">Silakan Upload QR Google Authenticator</pre>
@@ -71,7 +72,8 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <script>
-/* MAIN SCRIPT - improved */
+/* Improved script with Info GTK auto-detect fallback */
+
 document.getElementById('fileInput').addEventListener('change', handleFile);
 
 function handleFile(evt) {
@@ -108,9 +110,7 @@ function handleFile(evt) {
 
 function processQR(qrText) {
     try {
-        // Jika otpauth://... (Google Auth URI)
         if (typeof qrText === 'string' && qrText.startsWith("otpauth://")) {
-            // parsing lebih aman: buat URL, label dari pathname tanpa leading slash
             try {
                 const url = new URL(qrText);
                 const secret = url.searchParams.get("secret");
@@ -131,7 +131,6 @@ function processQR(qrText) {
             return;
         }
 
-        // Jika bukan otpauth, coba parse sebagai URL yang membawa parameter data (migration)
         let url;
         try {
             url = new URL(qrText);
@@ -146,7 +145,6 @@ function processQR(qrText) {
             return;
         }
 
-        // decodeURIComponent dulu -> normalisasi -> atob
         let binary;
         try {
             const decoded = decodeURIComponent(dataParam);
@@ -162,7 +160,6 @@ function processQR(qrText) {
             bytes[i] = binary.charCodeAt(i);
         }
 
-        // protobuf schema (Google Authenticator migration)
         const root = protobuf.Root.fromJSON({
             nested: {
                 MigrationPayload: {
@@ -231,12 +228,11 @@ function base32Encode(bytes) {
     if (bits > 0) {
         output += alphabet[(value << (5 - bits)) & 31];
     }
-    // tambahkan padding agar kelipatan 8 (opsional)
     while (output.length % 8 !== 0) output += '=';
     return output;
 }
 
-/* Bookmarklet generator (lebih aman) */
+/* Bookmarklet generator with Info GTK auto-detect */
 function generateBookmarklet() {
     const code = document.getElementById("bookmarkletCode").value.trim();
     const namacode = document.getElementById("bookmarkletNama").value.trim();
@@ -246,39 +242,87 @@ function generateBookmarklet() {
     if (!code) { alert("Masukkan kode secret terlebih dahulu."); return; }
     if (!namacode) { alert("Masukkan nama bookmark terlebih dahulu."); return; }
 
-    // mapping default -> ganti selector sesuai hasil inspect target jika perlu
+    // default mapping (placeholder) - ganti kalau tahu selector pasti
     const targetSelectors = {
-        "kode2fa": "#kode2fa",      // UBAH sesuai halaman target sebenarnya
-        "totp_code": "#totp_code",  // UBAH sesuai halaman target sebenarnya
-        "otp": "#otp",              // UBAH sesuai halaman target sebenarnya
-        // default placeholder untuk Info GTK -> sangat disarankan masukkan selector custom setelah inspect
-        "info_gtk": "input[name='otp']"
+        "kode2fa": "#kode2fa",
+        "totp_code": "#totp_code",
+        "otp": "#otp"
     };
 
-    // jika pengguna mengisi customSelector, gunakan itu
-    const selector = customSelector || targetSelectors[selectedOption] || selectedOption;
+    // For Info GTK we will try multiple common selectors (auto-detect)
+    const infoGtkCandidates = [
+        "input[name='otp']",
+        "input[name='code']",
+        "input[name='kode']",
+        "input[id*='otp']",
+        "input[id*='kode']",
+        "input[type='text']",
+        "input.form-control",
+        "input[class*='otp']",
+        "input[class*='kode']"
+    ];
 
-    // buat js yang akan dieksekusi di halaman target; gunakan JSON.stringify untuk men-escape secret & selector aman
-    const jsCode = "(function(){try{var secretKey=" + JSON.stringify(code) + ";var selector=" + JSON.stringify(selector) + ";" +
-    "function base32Decode(e){for(var t=e.toUpperCase().replace(/=+$/,'').replace(/\\s+/g,''),r=0,n=0,a=[],o=0;o<t.length;o++){var c='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(t[o]);if(-1===c)throw new Error('Invalid Base32 character: '+t[o]);n=n<<5|c,(r+=5)>=8&&(a.push(n>>>r-8&255),r-=8)}return new Uint8Array(a)}" +
+    // determine selector(s) to try
+    let selectorToUse;
+    let multipleSelectors = null;
+    if (customSelector) {
+        // user provided exact selector -> use single selector
+        selectorToUse = customSelector;
+    } else if (selectedOption === 'info_gtk') {
+        // use auto-detect list
+        multipleSelectors = infoGtkCandidates;
+    } else {
+        selectorToUse = targetSelectors[selectedOption] || null;
+    }
 
-    "function intToBuffer(e){var t=new ArrayBuffer(8),r=new DataView(t),n=Math.floor(e/Math.pow(2,32)),a=e>>>0;return r.setUint32(0,n),r.setUint32(4,a),new Uint8Array(t)}" +
+    // Build JS code to be injected as bookmarklet.
+    // We JSON.stringify values to escape them safely.
+    const jsParts = [];
+    jsParts.push("(function(){try{");
+    jsParts.push("var secretKey=" + JSON.stringify(code) + ";");
+    if (multipleSelectors) {
+        jsParts.push("var candidates=" + JSON.stringify(multipleSelectors) + ";");
+    } else {
+        jsParts.push("var selector=" + JSON.stringify(selectorToUse) + ";");
+    }
 
-    "function generateTOTP(e,t,r,n){t=t||6,r=r||30,n=n||'SHA-1';var a=base32Decode(e),o=Math.floor(Date.now()/1000),c=intToBuffer(Math.floor(o/r));return crypto.subtle.importKey('raw',a,{name:'HMAC',hash:{name:n}},!1,['sign']).then(function(k){return crypto.subtle.sign('HMAC',k,c)}).then(function(sig){var bytes=new Uint8Array(sig),off=15&bytes[bytes.length-1];var code=(((127&bytes[off])<<24)|((255&bytes[off+1])<<16)|((255&bytes[off+2])<<8)|(255&bytes[off+3]))%Math.pow(10,t);return code.toString().padStart(t,'0')})}" +
+    jsParts.push(
+        "function base32Decode(e){for(var t=e.toUpperCase().replace(/=+$/,'').replace(/\\s+/g,''),r=0,n=0,a=[],o=0;o<t.length;o++){var c='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(t[o]);if(-1===c)throw new Error('Invalid Base32 character: '+t[o]);n=n<<5|c,(r+=5)>=8&&(a.push(n>>>r-8&255),r-=8)}return new Uint8Array(a)}"
+    );
+    jsParts.push(
+        "function intToBuffer(e){var t=new ArrayBuffer(8),r=new DataView(t),n=Math.floor(e/Math.pow(2,32)),a=e>>>0;return r.setUint32(0,n),r.setUint32(4,a),new Uint8Array(t)}"
+    );
+    jsParts.push(
+        "function generateTOTP(e,t,r,n){t=t||6,r=r||30,n=n||'SHA-1';var a=base32Decode(e),o=Math.floor(Date.now()/1000),c=intToBuffer(Math.floor(o/r));return crypto.subtle.importKey('raw',a,{name:'HMAC',hash:{name:n}},!1,['sign']).then(function(k){return crypto.subtle.sign('HMAC',k,c)}).then(function(sig){var bytes=new Uint8Array(sig),off=15&bytes[bytes.length-1];var code=(((127&bytes[off])<<24)|((255&bytes[off+1])<<16)|((255&bytes[off+2])<<8)|(255&bytes[off+3]))%Math.pow(10,t);return code.toString().padStart(t,'0')})}"
+    );
 
-    "generateTOTP(secretKey).then(function(otp){var el=document.querySelector(selector);if(!el){alert('Elemen target OTP tidak ditemukan (selector: '+selector+'). Coba periksa selector di pengaturan bookmarklet.');return;}if('value' in el) el.value=otp; else el.textContent=otp; try{el.dispatchEvent(new Event('input',{bubbles:true}))}catch(e){} }).catch(function(err){alert('Gagal generate OTP: '+(err&&err.message?err.message:err))});}catch(e){alert('Error di bookmarklet: '+e.message)}})();";
+    // Function that tries multiple selectors if provided, otherwise single selector
+    jsParts.push("function findTarget(){");
+    if (multipleSelectors) {
+        jsParts.push("for(var i=0;i<candidates.length;i++){var s=candidates[i];try{var el=document.querySelector(s);if(el) return {el:el,selector:s};}catch(e){} } return null;");
+    } else {
+        jsParts.push("try{var el=document.querySelector(selector); if(el) return {el:el,selector:selector};}catch(e){} return null;");
+    }
+    jsParts.push("}");
 
-    // buat bookmarklet (encode untuk aman)
+    jsParts.push(
+        "generateTOTP(secretKey).then(function(otp){var found=findTarget();if(!found){var msg='Elemen target OTP tidak ditemukan' + (typeof selector!=='undefined'?(' (selector: '+selector+')') : ''); alert(msg + '. Jika menggunakan Info GTK, coba masukkan selector manual dari DevTools.');return;} var el=found.el; if('value' in el) el.value=otp; else el.textContent=otp; try{el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){} }).catch(function(err){alert('Gagal generate OTP: '+(err&&err.message?err.message:err));});"
+    );
+
+    jsParts.push("}catch(e){alert('Error di bookmarklet: '+(e&&e.message?e.message:e));}})();");
+
+    const jsCode = jsParts.join('');
+
+    // create bookmarklet (encode)
     const bookmarklet = "javascript:" + encodeURIComponent(jsCode);
     const link = document.getElementById("bookmarkletLink");
     link.href = bookmarklet;
     link.textContent = namacode;
-    link.title = "Drag ke bookmarkbar atau klik untuk menyalin";
+    link.title = "Drag this link to bookmark bar or right-click -> Copy link";
 
-    // optional: set atribut rel untuk keamanan saat target terbuka
+    // extra: show small hint in console for debugging
+    console.log("Bookmarklet generated. If it fails on info.gtk, inspect the input element and paste selector into 'Selector custom'.");
 }
-
-/* End main */
 </script>
 </body>
 </html>
