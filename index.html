@@ -186,6 +186,14 @@
         white-space: pre-wrap;
         font-family: monospace;
     }
+    .success-message {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: none;
+    }
 </style>
 </head>
 <body>
@@ -217,6 +225,10 @@
     
     <p style="margin: 24px 0; font-family: monospace, sans-serif;">Bookmarklet: <a id="bookmarkletLink" href="#" target="_blank"></a></p>
     
+    <div class="success-message" id="successMessage">
+        ✅ Bookmarklet berhasil dibuat! Seret link di atas ke bilang bookmark browser Anda.
+    </div>
+    
     <div class="bookmarklet-instructions">
         <strong>Cara menggunakan:</strong> Setelah generate, seret link bookmarklet ke bilang penanda (bookmark bar) browser Anda. 
         Buka halaman target, lalu klik bookmarklet tersebut untuk mengisi kode OTP secara otomatis.
@@ -224,7 +236,7 @@
     
     <div class="info-box">
         <strong>Info GTK:</strong> Fitur ini khusus untuk halaman <a href="https://info.gtk.dikdasmen.go.id/info" target="_blank">info.gtk.dikdasmen.go.id</a>. 
-        Bookmarklet akan mengisi 6 digit kode OTP ke dalam input yang sesuai pada modal konfirmasi OTP.
+        Pastikan modal OTP sudah terbuka sebelum menjalankan bookmarklet.
     </div>
     
     <hr>
@@ -258,7 +270,6 @@ function handleFile(evt) {
             ctx.drawImage(img, 0, 0);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
-            // Use jsQR if available
             if (typeof jsQR !== 'undefined') {
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
                 if (code) {
@@ -290,7 +301,6 @@ function processQR(qrText) {
                     `Issuer : ${issuer}\n` +
                     `Secret : ${secret}`;
                     
-                // Auto-fill the secret field
                 document.getElementById('bookmarkletCode').value = secret;
             } else {
                 document.getElementById('output').textContent = "⚠️ Secret tidak ditemukan di QR.";
@@ -309,12 +319,11 @@ function generateBookmarklet() {
     const namacode = document.getElementById("bookmarkletNama").value.trim();
     const selectedOption = document.querySelector('input[name="bmOption"]:checked').value;
 
-    // Mapping selector untuk setiap jenis OTP
     const targetSelectors = {
         "kode2fa": "#kode2fa",
         "totp_code": "#totp_code",
         "otp": "#otp",
-        "info_gtk": ".otp-input"  // 6 input fields dengan class ini
+        "info_gtk": ".otp-input"
     };
 
     const selector = targetSelectors[selectedOption];
@@ -327,7 +336,6 @@ function generateBookmarklet() {
         return;
     }
 
-    // Kode JavaScript untuk bookmarklet
     let jsCode = `
 (function() {
     var secretKey = "${code}";
@@ -359,32 +367,42 @@ function generateBookmarklet() {
             });
     }
     
+    function fillOtpFields(otp, selector, maxRetries = 10, retryDelay = 500) {
+        var retryCount = 0;
+        
+        function tryFill() {
+            var inputs = document.querySelectorAll(selector);
+            
+            if (inputs && inputs.length >= 6) {
+                // Untuk Info GTK - isi 6 input field terpisah
+                for (var i = 0; i < 6; i++) {
+                    if (i < otp.length) {
+                        inputs[i].value = otp[i];
+                        var event = new Event('input', { bubbles: true });
+                        inputs[i].dispatchEvent(event);
+                    }
+                }
+                console.log("Kode OTP telah diisi: " + otp);
+                return true;
+            } else if (retryCount < maxRetries) {
+                // Coba lagi setelah delay
+                retryCount++;
+                setTimeout(tryFill, retryDelay);
+                return false;
+            } else {
+                // Gagal setelah beberapa percobaan
+                alert("Tidak dapat menemukan elemen OTP. Pastikan modal OTP sudah terbuka.");
+                return false;
+            }
+        }
+        
+        return tryFill();
+    }
+    
     generateTOTP(secretKey).then(function(otp) {
         if ("${selectedOption}" === "info_gtk") {
-            // Khusus untuk Info GTK - isi 6 input field terpisah
-            var inputs = document.querySelectorAll("${selector}");
-            if (!inputs || inputs.length === 0) {
-                alert("Elemen OTP Info GTK tidak ditemukan (selector: ${selector})");
-                return;
-            }
-            
-            if (inputs.length < 6) {
-                alert("Ditemukan " + inputs.length + " input, tetapi diperlukan 6 input untuk OTP");
-                return;
-            }
-            
-            // Isi masing-masing input dengan digit OTP yang sesuai
-            for (var i = 0; i < 6; i++) {
-                if (i < otp.length) {
-                    inputs[i].value = otp[i];
-                    // Trigger event untuk memicu validasi
-                    var event = new Event('input', { bubbles: true });
-                    inputs[i].dispatchEvent(event);
-                }
-            }
-            
-            // Beri umpan balik bahwa OTP telah diisi
-            console.log("Kode OTP telah diisi: " + otp);
+            // Untuk Info GTK dengan 6 input field
+            fillOtpFields(otp, "${selector}");
         } else {
             // Untuk opsi lainnya (Dapodik, SDM, SIASN)
             var el = document.querySelector("${selector}");
@@ -399,11 +417,9 @@ function generateBookmarklet() {
                 el.textContent = otp;
             }
             
-            // Trigger event untuk memicu validasi
             var event = new Event('input', { bubbles: true });
             el.dispatchEvent(event);
             
-            // Beri umpan balik bahwa OTP telah diisi
             console.log("Kode OTP telah diisi: " + otp);
         }
     }).catch(function(err) {
@@ -412,7 +428,6 @@ function generateBookmarklet() {
 })();
 `;
 
-    // Encode dan buat bookmarklet
     const encodedJsCode = encodeURIComponent(jsCode.replace(/\s+/g, ' '));
     const bookmarklet = "javascript:" + encodedJsCode;
     
@@ -420,12 +435,13 @@ function generateBookmarklet() {
     link.href = bookmarklet;
     link.textContent = namacode;
     
-    // Tambahkan instruksi drag and drop
-    alert("Bookmarklet berhasil dibuat! Seret link di atas ke bilang bookmark browser Anda.");
+    document.getElementById("successMessage").style.display = "block";
+    setTimeout(() => {
+        document.getElementById("successMessage").style.display = "none";
+    }, 5000);
 }
 </script>
 
-<!-- Load external libraries -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 </body>
 </html>
