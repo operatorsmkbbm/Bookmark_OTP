@@ -4,48 +4,242 @@
 <meta charset="utf-8">
 <title>Bookmarklet Kode OTP</title>
 <style>
-    body {font-family: monospace, sans-serif;background: #f4f6f8;color: #333;padding: 20px;}p {font-family: monospace}h1 {color: #2c3e50;font-size: 24px;}.container {background: white;padding: 20px;border-radius: 10px;max-width: 40em;margin: auto;box-shadow: 0 4px 10px rgba(0,0,0,0.1);}input[type="file"], input[type="text"] {margin-top: 10px;padding: 8px;font-family: monospace;border: 1px solid #ccc;border-radius: 6px;background: #f9f9f9;width: 100%;box-sizing: border-box;}#output {background: #1e1e1e;color: #00ff88;padding: 15px;border-radius: 6px;margin-top: 20px;font-family: monospace;white-space: pre-wrap;max-height: 400px;overflow-y: auto;}button {margin-top: 15px;padding: 8px 12px;background: #3498db;color: white;border: none;border-radius: 6px;cursor: pointer;font-family: monospace;}button:hover {background: #2980b9;}.radio-group {display: flex;flex-wrap: wrap;gap: 15px;margin: 10px 0;}.radio-group label {display: flex;align-items: center;gap: 5px;cursor: pointer;transition: 0.2s;}.radio-group input[type="radio"] {accent-color: #007bff;transform: scale(1.2);}.footer {margin-top: 2rem;text-align: center;font-size: 0.875rem;color: #6b7280;}.footer a {color: #3b82f6;font-weight: 600;text-decoration: none;}.footer a:hover {text-decoration: underline;}.info-box {background-color: #e8f4fc;border-left: 4px solid #3498db;padding: 12px;margin: 15px 0;border-radius: 4px;font-size: 0.9rem;}
+    body {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        color: #333;
+        padding: 20px;
+        line-height: 1.6;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 28px;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .container {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        max-width: 700px;
+        margin: auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    input[type="file"], input[type="text"] {
+        margin-top: 10px;
+        padding: 12px;
+        font-family: monospace;
+        border: 1px solid #d1d1d1;
+        border-radius: 8px;
+        background: #f9f9f9;
+        width: 100%;
+        box-sizing: border-box;
+        transition: all 0.3s;
+    }
+    input[type="text"]:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        outline: none;
+    }
+    #output {
+        background: #1e1e1e;
+        color: #00ff88;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+        line-height: 1.5;
+    }
+    button {
+        margin-top: 15px;
+        padding: 12px 20px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: 'Segoe UI', sans-serif;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    button:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin: 15px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 6px;
+        transition: all 0.2s;
+        border: 1px solid #e0e0e0;
+    }
+    .radio-group label:hover {
+        background: #e8f4fc;
+        border-color: #3498db;
+    }
+    .radio-group input[type="radio"]:checked + span {
+        font-weight: bold;
+        color: #3498db;
+    }
+    .radio-group input[type="radio"] {
+        accent-color: #3498db;
+        transform: scale(1.2);
+    }
+    .footer {
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: #6b7280;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .footer a {
+        color: #3b82f6;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .footer a:hover {
+        text-decoration: underline;
+    }
+    .header-links {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .header-links p {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .header-links a {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+        color: #3498db;
+        font-weight: 500;
+    }
+    .header-links a:hover {
+        text-decoration: underline;
+    }
+    .info-box {
+        background-color: #e8f4fc;
+        border-left: 4px solid #3498db;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 6px;
+        font-size: 0.95rem;
+    }
+    .info-box strong {
+        color: #2c3e50;
+    }
+    .bookmarklet-instructions {
+        background: #fff8e6;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+    .highlight {
+        background: #f0f7ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        color: #0066cc;
+    }
+    h3 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    h3::before {
+        content: "•";
+        color: #3498db;
+        font-size: 1.5em;
+    }
+    pre {
+        white-space: pre-wrap;
+        font-family: monospace;
+    }
 </style>
 </head>
 <body>
 <div class="container">
-	<h1>⭐ Bookmarklet Kode OTP</h1>
-	<div style="display:flex; justify-content:space-between; align-items:center;">
-	  <p style="margin:0;">Tutorial: <a style="text-decoration:none" href="https://youtu.be/29o-ych59Os" target="_blank">▶️ Youtube - @danie_lung</a></p>
-	  <p style="margin:0;">Ajak Ngopi: <a style="text-decoration:none" href="https://s.id/danielung" target="_blank">☕️ Tubruk</a></p>
-	</div>
-    <hr>
-    <h3 style="margin-bottom: 5px">👉 Generator Bookmarklet</h3>
-	<p style="margin-top:0">Bookmarklet ini berfungsi untuk menghasilkan kode OTP sesuai secret yang Anda masukkan. Kode OTP akan langsung terisi sesuai penggunaan OTP yang Anda buat.</p>
-    <input type="text" id="bookmarkletCode" placeholder="Masukkan Kode Secret">
-	<input type="text" id="bookmarkletNama" placeholder="Masukkan Nama Bookmarklet">
-	<div class="radio-group">
-		<p style="font-family: monospace, sans-serif;margin:0;width:100%">Pilih Penggunaan OTP:</p>
-		<label><input type="radio" name="bmOption" value="kode2fa" checked> Dapodik</label>
-		<label><input type="radio" name="bmOption" value="totp_code"> SDM</label>
-		<label><input type="radio" name="bmOption" value="otp"> SIASN</label>
-		<label><input type="radio" name="bmOption" value="otp_code"> Info GTK</label>
-	</div>
-    <button onclick="generateBookmarklet()">Generate Bookmarklet</button>
-    <p style="margin: 24px 0;font-family: monospace, sans-serif">Bookmarklet: <a id="bookmarkletLink" href="#" target="_blank"></a></p>
+    <h1>⭐ Bookmarklet Kode OTP</h1>
     
-    <div class="info-box">
-        <strong>Info GTK:</strong> Fitur baru ini khusus untuk halaman <a href="https://info.gtk.dikdasmen.go.id/info" target="_blank">info.gtk.dikdasmen.go.id</a>. 
-        Pastikan Anda sudah memiliki kode secret dari aplikasi authenticator Anda.
+    <div class="header-links">
+        <p>Tutorial: <a href="https://youtu.be/29o-ych59Os" target="_blank">▶️ Youtube - @danie_lung</a></p>
+        <p>Ajak Ngopi: <a href="https://s.id/danielung" target="_blank">☕️ Tubruk</a></p>
     </div>
     
-	<hr>
-    <h3 style="margin-bottom: 5px">👉 Google Authenticator QR Decoder</h3>
-    <p style="margin-top:0">Unggah gambar kode QR 2FA untuk mengekstrak akun dan secret-nya. Atau Anda bisa langsung menggunakan Generator Bookmarklet diatas jika sudah punya kode secret.</p>
+    <hr>
+    
+    <h3>👉 Generator Bookmarklet</h3>
+    <p>Bookmarklet ini berfungsi untuk menghasilkan kode OTP sesuai secret yang Anda masukkan. Kode OTP akan langsung terisi sesuai penggunaan OTP yang Anda pilih.</p>
+    
+    <input type="text" id="bookmarkletCode" placeholder="Masukkan Kode Secret">
+    <input type="text" id="bookmarkletNama" placeholder="Masukkan Nama Bookmarklet">
+    
+    <div class="radio-group">
+        <p style="width: 100%; margin: 0 0 10px 0; font-weight: bold;">Pilih Penggunaan OTP:</p>
+        <label><input type="radio" name="bmOption" value="kode2fa" checked><span>Dapodik</span></label>
+        <label><input type="radio" name="bmOption" value="totp_code"><span>SDM</span></label>
+        <label><input type="radio" name="bmOption" value="otp"><span>SIASN</span></label>
+        <label><input type="radio" name="bmOption" value="info_gtk"><span>Info GTK</span></label>
+    </div>
+    
+    <button onclick="generateBookmarklet()">Generate Bookmarklet</button>
+    
+    <p style="margin: 24px 0; font-family: monospace, sans-serif;">Bookmarklet: <a id="bookmarkletLink" href="#" target="_blank"></a></p>
+    
+    <div class="bookmarklet-instructions">
+        <strong>Cara menggunakan:</strong> Setelah generate, seret link bookmarklet ke bilang penanda (bookmark bar) browser Anda. 
+        Buka halaman target, lalu klik bookmarklet tersebut untuk mengisi kode OTP secara otomatis.
+    </div>
+    
+    <div class="info-box">
+        <strong>Info GTK:</strong> Fitur ini khusus untuk halaman <a href="https://info.gtk.dikdasmen.go.id/info" target="_blank">info.gtk.dikdasmen.go.id</a>. 
+        Bookmarklet akan mengisi 6 digit kode OTP ke dalam input yang sesuai pada modal konfirmasi OTP.
+    </div>
+    
+    <hr>
+    
+    <h3>👉 Google Authenticator QR Decoder</h3>
+    <p>Unggah gambar kode QR 2FA untuk mengekstrak akun dan secret-nya. Atau Anda bisa langsung menggunakan Generator Bookmarklet diatas jika sudah punya kode secret.</p>
+    
     <input type="file" id="fileInput" accept="image/*">
     <pre id="output">Silakan Upload QR Google Authenticator</pre>
-		<div class="footer">
-			📂 Lihat kode sumber di <a href="https://github.com/danie-lung/bookmarklet_kode_otp" target="_blank">GitHub</a>
-		</div>
+    
+    <div class="footer">
+        📂 Lihat kode sumber di <a href="https://github.com/danie-lung/bookmarklet_kode_otp" target="_blank">GitHub</a>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/protobufjs/dist/protobuf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 <script>
 document.getElementById('fileInput').addEventListener('change', handleFile);
 
@@ -63,12 +257,17 @@ function handleFile(evt) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-            if (code) {
-                processQR(code.data);
+            
+            // Use jsQR if available
+            if (typeof jsQR !== 'undefined') {
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                if (code) {
+                    processQR(code.data);
+                } else {
+                    document.getElementById('output').textContent = "❌ QR code tidak terbaca.";
+                }
             } else {
-                document.getElementById('output').textContent = "❌ QR code tidak terbaca.";
+                document.getElementById('output').textContent = "❌ Library jsQR tidak dimuat. Muat ulang halaman.";
             }
         };
         img.src = e.target.result;
@@ -82,104 +281,44 @@ function processQR(qrText) {
             const url = new URL(qrText);
             const secret = url.searchParams.get("secret");
             const issuer = url.searchParams.get("issuer") || "(tidak ada)";
-            const label = decodeURIComponent(url.pathname.replace(/^\/\//, ''));
+            const account = decodeURIComponent(url.pathname.split('/').pop() || "");
+            
             if (secret) {
                 document.getElementById('output').textContent =
                     `📌 OTP Auth\n` +
-                    `Nama   : ${label}\n` +
+                    `Nama   : ${account}\n` +
                     `Issuer : ${issuer}\n` +
                     `Secret : ${secret}`;
+                    
+                // Auto-fill the secret field
+                document.getElementById('bookmarkletCode').value = secret;
             } else {
                 document.getElementById('output').textContent = "⚠️ Secret tidak ditemukan di QR.";
             }
             return;
         }
-        const url = new URL(qrText);
-        let dataParam = url.searchParams.get("data");
-
-        if (!dataParam) {
-            document.getElementById('output').textContent = "⚠️ Parameter data= tidak ditemukan.";
-            return;
-        }
-
-        dataParam = dataParam.replace(/ /g, '+').replace(/%20/g, '+').replace(/%2B/gi, '+');
-
-        const binary = atob(dataParam);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-
-        const root = protobuf.Root.fromJSON({
-            nested: {
-                MigrationPayload: {
-                    fields: {
-                        otpParameters: { rule: "repeated", type: "OtpParameters", id: 1 },
-                        version: { type: "int32", id: 2 },
-                        batchSize: { type: "int32", id: 3 },
-                        batchIndex: { type: "int32", id: 4 },
-                        batchId: { type: "bytes", id: 5 }
-                    }
-                },
-                OtpParameters: {
-                    fields: {
-                        secret: { type: "bytes", id: 1 },
-                        name: { type: "string", id: 2 },
-                        issuer: { type: "string", id: 3 },
-                        algorithm: { type: "int32", id: 4 },
-                        digits: { type: "int32", id: 5 },
-                        type: { type: "int32", id: 6 },
-                        counter: { type: "int64", id: 7 }
-                    }
-                }
-            }
-        });
-
-        const MigrationPayload = root.lookupType("MigrationPayload");
-        const payload = MigrationPayload.decode(bytes);
-
-        if (!payload.otpParameters || payload.otpParameters.length === 0) {
-            document.getElementById('output').textContent = "⚠️ Tidak ada akun ditemukan di payload migrasi.";
-            return;
-        }
-
-        let result = "";
-        payload.otpParameters.forEach((param, i) => {
-            const secretBase32 = base32Encode(param.secret);
-            result += `📌 Akun ${i+1}\n`;
-            result += `Nama   : ${param.name}\n`;
-            result += `Issuer : ${param.issuer}\n`;
-            result += `Secret : ${secretBase32}\n\n`;
-        });
-
-        document.getElementById('output').textContent = result;
+        
+        document.getElementById('output').textContent = "⚠️ Format QR tidak dikenali. Pastikan QR dari Google Authenticator.";
     } catch (err) {
         document.getElementById('output').textContent = "❌ Error: " + err.message;
     }
 }
 
-function base32Encode(bytes) {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let bits = 0, value = 0, output = '';
-    for (let i = 0; i < bytes.length; i++) {
-        value = (value << 8) | bytes[i];
-        bits += 8;
-        while (bits >= 5) {
-            output += alphabet[(value >>> (bits - 5)) & 31];
-            bits -= 5;
-        }
-    }
-    if (bits > 0) {
-        output += alphabet[(value << (5 - bits)) & 31];
-    }
-    return output;
-}
-
 function generateBookmarklet() {
     const code = document.getElementById("bookmarkletCode").value.trim();
     const namacode = document.getElementById("bookmarkletNama").value.trim();
-    const selected2fa = document.querySelector('input[name="bmOption"]:checked').value;
-    
+    const selectedOption = document.querySelector('input[name="bmOption"]:checked').value;
+
+    // Mapping selector untuk setiap jenis OTP
+    const targetSelectors = {
+        "kode2fa": "#kode2fa",
+        "totp_code": "#totp_code",
+        "otp": "#otp",
+        "info_gtk": ".otp-input"  // 6 input fields dengan class ini
+    };
+
+    const selector = targetSelectors[selectedOption];
+
     if (!code) {
         alert("Masukkan kode secret terlebih dahulu.");
         return;
@@ -187,14 +326,106 @@ function generateBookmarklet() {
         alert("Masukkan nama bookmark terlebih dahulu.");
         return;
     }
+
+    // Kode JavaScript untuk bookmarklet
+    let jsCode = `
+(function() {
+    var secretKey = "${code}";
     
-    let jsCode = `var secretKey="${code}";var jadiKey="";function base32Decode(e){for(var t=e.toUpperCase().replace(/=+$/,"").replace(/\s+/g,""),r=0,n=0,a=[],o=0;o<t.length;o++){var c="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".indexOf(t[o]);if(-1===c)throw new Error("Invalid Base32 character: "+t[o]);n=n<<5|c,(r+=5)>=8&&(a.push(n>>>r-8&255),r-=8)}return new Uint8Array(a)}function intToBuffer(e){var t=new ArrayBuffer(8),r=new DataView(t),n=Math.floor(e/Math.pow(2,32)),a=e>>>0;return r.setUint32(0,n),r.setUint32(4,a),new Uint8Array(t)}function generateTOTP(e,t,r,n){t=t||6,r=r||30,n=n||"SHA-1";var a=base32Decode(e),o=Math.floor(Date.now()/1e3),c=intToBuffer(Math.floor(o/r));return crypto.subtle.importKey("raw",a,{name:"HMAC",hash:{name:n}},!1,["sign"]).then(function(e){return crypto.subtle.sign("HMAC",e,c)}).then(function(e){var r=new Uint8Array(e),n=15&r[r.length-1];return(((127&r[n])<<24|(255&r[n+1])<<16|(255&r[n+2])<<8|255&r[n+3])%Math.pow(10,t)).toString().padStart(t,"0")})}generateTOTP(secretKey).then(function(e){jadiKey=e;document.getElementById("${selected2fa}").value=e}).catch(function(e){alert("Error: id tidak ditemukan untuk OTP " + jadiKey)});`;
+    function base32Decode(e) {
+        for(var t = e.toUpperCase().replace(/=+$/, "").replace(/\\s+/g, ""), r = 0, n = 0, a = [], o = 0; o < t.length; o++) {
+            var c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".indexOf(t[o]);
+            if (-1 === c) throw new Error("Invalid Base32 character: " + t[o]);
+            n = n << 5 | c;
+            (r += 5) >= 8 && (a.push(n >>> r - 8 & 255), r -= 8);
+        }
+        return new Uint8Array(a);
+    }
     
-    const bookmarklet = "javascript:(function(){" + encodeURIComponent(jsCode) + "})();";
+    function intToBuffer(e) {
+        var t = new ArrayBuffer(8), r = new DataView(t),
+            n = Math.floor(e / Math.pow(2, 32)), a = e >>> 0;
+        return r.setUint32(0, n), r.setUint32(4, a), new Uint8Array(t);
+    }
+    
+    function generateTOTP(e, t, r, n) {
+        t = t || 6, r = r || 30, n = n || "SHA-1";
+        var a = base32Decode(e), o = Math.floor(Date.now() / 1000), c = intToBuffer(Math.floor(o / r));
+        return crypto.subtle.importKey("raw", a, {name: "HMAC", hash: {name: n}}, false, ["sign"])
+            .then(function(e) { return crypto.subtle.sign("HMAC", e, c); })
+            .then(function(e) {
+                var r = new Uint8Array(e), n = 15 & r[r.length - 1];
+                return (((127 & r[n]) << 24 | (255 & r[n+1]) << 16 | (255 & r[n+2]) << 8 | 255 & r[n+3]) % Math.pow(10, t)).toString().padStart(t, "0");
+            });
+    }
+    
+    generateTOTP(secretKey).then(function(otp) {
+        if ("${selectedOption}" === "info_gtk") {
+            // Khusus untuk Info GTK - isi 6 input field terpisah
+            var inputs = document.querySelectorAll("${selector}");
+            if (!inputs || inputs.length === 0) {
+                alert("Elemen OTP Info GTK tidak ditemukan (selector: ${selector})");
+                return;
+            }
+            
+            if (inputs.length < 6) {
+                alert("Ditemukan " + inputs.length + " input, tetapi diperlukan 6 input untuk OTP");
+                return;
+            }
+            
+            // Isi masing-masing input dengan digit OTP yang sesuai
+            for (var i = 0; i < 6; i++) {
+                if (i < otp.length) {
+                    inputs[i].value = otp[i];
+                    // Trigger event untuk memicu validasi
+                    var event = new Event('input', { bubbles: true });
+                    inputs[i].dispatchEvent(event);
+                }
+            }
+            
+            // Beri umpan balik bahwa OTP telah diisi
+            console.log("Kode OTP telah diisi: " + otp);
+        } else {
+            // Untuk opsi lainnya (Dapodik, SDM, SIASN)
+            var el = document.querySelector("${selector}");
+            if (!el) {
+                alert("Elemen target OTP tidak ditemukan (selector: ${selector}).");
+                return;
+            }
+            
+            if ('value' in el) {
+                el.value = otp;
+            } else {
+                el.textContent = otp;
+            }
+            
+            // Trigger event untuk memicu validasi
+            var event = new Event('input', { bubbles: true });
+            el.dispatchEvent(event);
+            
+            // Beri umpan balik bahwa OTP telah diisi
+            console.log("Kode OTP telah diisi: " + otp);
+        }
+    }).catch(function(err) {
+        alert("Gagal generate OTP: " + (err && err.message ? err.message : err));
+    });
+})();
+`;
+
+    // Encode dan buat bookmarklet
+    const encodedJsCode = encodeURIComponent(jsCode.replace(/\s+/g, ' '));
+    const bookmarklet = "javascript:" + encodedJsCode;
+    
     const link = document.getElementById("bookmarkletLink");
     link.href = bookmarklet;
     link.textContent = namacode;
+    
+    // Tambahkan instruksi drag and drop
+    alert("Bookmarklet berhasil dibuat! Seret link di atas ke bilang bookmark browser Anda.");
 }
 </script>
+
+<!-- Load external libraries -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 </body>
 </html>
